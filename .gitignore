@@ -1,0 +1,53 @@
+# Root-level ignores
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.log
+
+# Ignore environment and configuration files
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+.env.*
+!.env.example
+
+# Ignore lock files
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# Ignore Docker files
+docker-compose.override.yml
+*.dockerfile
+/.docker
+
+# Ignore coverage reports
+coverage/
+
+# Frontend-specific ignores (React)
+frontend/node_modules/
+frontend/build/
+frontend/.pnp
+frontend.pnp.js
+frontend/.cache/
+frontend/.eslintcache
+frontend/.stylelintcache
+frontend/public/**/*.map
+frontend/.parcel-cache/
+frontend/dist/
+
+# Backend-specific ignores (Express)
+backend/node_modules/
+backend/tmp/
+backend/.cache/
+backend/dist/
+backend/logs/
+backend/*.log
+backend/.eslintcache
+
+# Ignore Jest and testing outputs
+frontend/coverage/
+backend/coverage/
