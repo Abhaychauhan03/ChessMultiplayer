@@ -1,9 +1,14 @@
 import { WebSocket, WebSocketServer } from "ws";
+import dotenv from "dotenv";
 import { GameManager } from "./GameManager";
 import { User } from "./User";
 import { v4 as uuidv4 } from "uuid";
 
-const wss = new WebSocketServer({ port: 8080 });
+dotenv.config();
+
+const port = process.env.PORT ? parseInt(process.env.PORT) : 8080;
+
+const wss = new WebSocketServer({ port });
 
 wss.on("listening", () => {
   console.log(`WebSocket server is running`);
