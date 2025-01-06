@@ -4,7 +4,6 @@ import { boardProps } from "../utils/types";
 import { getValidMoves } from "../utils/utils";
 
 function Board({ board, sendMove, disabled, myColor }: boardProps) {
-  console.log(myColor, disabled);
   const [from, setFrom] = useState("");
   const [validMoves, setValidMoves] = useState<(string | null)[]>([]);
   const indexToSquare = (num: number) => {
@@ -19,7 +18,6 @@ function Board({ board, sendMove, disabled, myColor }: boardProps) {
     if (!from || (clickedColor && clickedColor === myColor)) {
       if (!piece) return;
       setFrom(clickedSquare);
-      console.log(getValidMoves(clickedSquare));
       setValidMoves([...getValidMoves(clickedSquare)]);
     } else {
       if (from === clickedSquare) setFrom("");

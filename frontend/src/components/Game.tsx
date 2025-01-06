@@ -1,6 +1,6 @@
 import Board from "./Board";
 import { useState } from "react";
-import { chess, WS_URL } from "../utils/constants";
+import { chess } from "../utils/constants";
 import { ChessBoard, GameSocketData } from "../utils/types";
 import GameOver from "./GameOver";
 import Loader from "./Loader";
@@ -33,7 +33,7 @@ function Game() {
   };
   const startGame = () => {
     setLoading(true);
-    ws = new WebSocket(WS_URL);
+    ws = new WebSocket(import.meta.env.VITE_WS_URL);
     ws.onmessage = handleMessage;
   };
   const sendMove = (move: string) => {
