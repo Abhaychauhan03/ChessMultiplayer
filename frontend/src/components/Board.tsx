@@ -4,7 +4,7 @@ import { boardProps } from "../types/types";
 import { findSquareColor, getValidMoves, indexToSquare } from "../utils/utils";
 import ValidMoveIndicator from "./ValidMoveIndicator";
 
-function Board({ board, sendMove, disabled, myColor }: boardProps) {
+function Board({ board, sendMove, turn, myColor }: boardProps) {
   const [from, setFrom] = useState("");
   const [validMoves, setValidMoves] = useState<(string | null)[]>([]);
   const moveHandler = useCallback(
@@ -18,10 +18,13 @@ function Board({ board, sendMove, disabled, myColor }: boardProps) {
         setFrom(clickedSquare);
         const newValidMoves = getValidMoves(clickedSquare);
         if (JSON.stringify(newValidMoves) !== JSON.stringify(validMoves)) {
-          setValidMoves([...getValidMoves(clickedSquare)]);
+          setValidMoves([...newValidMoves]);
         }
       } else {
-        if (from === clickedSquare) setFrom("");
+        if (from === clickedSquare) {
+          setFrom("");
+          return;
+        }
         sendMove(JSON.stringify({ from, to: clickedSquare }));
         setFrom("");
         setValidMoves([]);
@@ -31,7 +34,7 @@ function Board({ board, sendMove, disabled, myColor }: boardProps) {
   );
   return (
     <div className="relative grid w-5/6 h-5/6 grid-cols-8 grid-rows-8">
-      {disabled && (
+      {turn !== myColor && (
         <div className="absolute inset-0 bg-gray-800 opacity-80 z-30"></div>
       )}
       {board.map((boardRow, i) => {

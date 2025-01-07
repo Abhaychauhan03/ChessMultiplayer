@@ -1,41 +1,45 @@
 import Board from "./Board";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { chess } from "../utils/constants";
 import { ChessBoard, GameSocketData } from "../types/types";
 import GameOver from "./GameOver";
 import Loader from "./Loader";
 import GameInfoPanel from "./GameInfoPanel";
+import { Color } from "chess.js";
 
 function Game() {
   const [board, setBoard] = useState<ChessBoard>([]);
   const [ws, setWs] = useState<WebSocket | null>(null);
   const [loading, setLoading] = useState(false);
-  const [disabled, setDisabled] = useState(false);
+  const [turn, setTurn] = useState<Color>("w");
   const [gameOver, setGameOver] = useState(false);
   const [won, setWon] = useState(true);
-  const [myColor, setMyColor] = useState<string>("w");
-  useEffect(() => {
-    return () => {
-      if (ws) ws.close();
-    };
-  }, [ws]);
+  const [myColor, setMyColor] = useState<Color>("w");
+
+  const handleNewFen = (fen: string) => {
+    if (fen) chess.load(fen);
+    setBoard(chess.board());
+    setTurn(chess.turn());
+  };
+
   const handleMessage = (data: MessageEvent) => {
     const jsonData: GameSocketData = JSON.parse(data.data);
     switch (jsonData.event) {
       case "matched":
         setLoading(false);
+        if (jsonData.message) handleNewFen(jsonData.message);
+        if (jsonData.color) setMyColor(jsonData.color);
         break;
       case "update":
-        chess.load(jsonData.message);
-        setBoard(chess.board());
-        setDisabled(!jsonData.turn);
-        if (!myColor) setMyColor(jsonData.turn ? "w" : "b");
+        if (jsonData.message) handleNewFen(jsonData.message);
         break;
       case "result":
         setGameOver(true);
         if (jsonData.message === "game-won") setWon(true);
         else setWon(false);
         ws?.close();
+        break;
+      case "connection":
         break;
       default:
         console.error(`Unknown Event Received From Server:- ${jsonData.event}`);
@@ -56,7 +60,7 @@ function Game() {
         <Board
           board={board}
           sendMove={sendMove}
-          disabled={disabled}
+          turn={turn}
           myColor={myColor}
         />
       </div>
