@@ -7,21 +7,32 @@ export default class Game {
   constructor(public p1: User, public p2: User) {
     this.chess = new Chess();
     this.id = uuidv4();
-    this.broadcastCurrentState();
+    p1.socket.send(
+      JSON.stringify({
+        event: "matched",
+        message: this.chess.fen(),
+        color: "w",
+      })
+    );
+    p2.socket.send(
+      JSON.stringify({
+        event: "matched",
+        message: this.chess.fen(),
+        color: "b",
+      })
+    );
   }
   private broadcastCurrentState() {
     this.p1.socket.send(
       JSON.stringify({
         event: "update",
         message: this.chess.fen(),
-        turn: this.chess.turn() === "w",
       })
     );
     this.p2.socket.send(
       JSON.stringify({
         event: "update",
         message: this.chess.fen(),
-        turn: this.chess.turn() === "b",
       })
     );
   }

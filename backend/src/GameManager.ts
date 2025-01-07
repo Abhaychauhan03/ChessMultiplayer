@@ -35,12 +35,6 @@ export class GameManager {
         })
       );
     } else {
-      player.socket.send(
-        JSON.stringify({ event: "matched", message: "matched a player" })
-      );
-      this.waitingPlayer.socket.send(
-        JSON.stringify({ event: "matched", message: "matched a player" })
-      );
       let game = new Game(this.waitingPlayer, player);
       this.games.push(game);
       game.startGame();
