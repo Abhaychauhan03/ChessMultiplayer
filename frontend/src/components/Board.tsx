@@ -2,7 +2,7 @@ import { Color, Square } from "chess.js";
 import { useCallback, useState } from "react";
 import { boardProps } from "../types/types";
 import { findSquareColor, getValidMoves, indexToSquare } from "../utils/utils";
-import ValidMoveIndicator from "./validMoveIndicator";
+import ValidMoveIndicator from "./ValidMoveIndicator";
 
 function Board({ board, sendMove, disabled, myColor }: boardProps) {
   const [from, setFrom] = useState("");
