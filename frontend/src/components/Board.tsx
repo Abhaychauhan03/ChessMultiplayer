@@ -1,8 +1,9 @@
-import { Color, Square } from "chess.js";
+import { Color, PieceSymbol, Square } from "chess.js";
 import { useCallback, useState } from "react";
 import { boardProps } from "../types/types";
 import { findSquareColor, getValidMoves, indexToSquare } from "../utils/utils";
 import ValidMoveIndicator from "./ValidMoveIndicator";
+import { chess } from "../utils/constants";
 
 function Board({ board, sendMove, turn, myColor }: boardProps) {
   const [from, setFrom] = useState("");
@@ -32,6 +33,52 @@ function Board({ board, sendMove, turn, myColor }: boardProps) {
     },
     [from, myColor, sendMove, validMoves]
   );
+  const updateCastlingMove = (type: PieceSymbol, color: Color) => {
+    if (type === "k") {
+      if (color === "b") {
+        if (chess.getCastlingRights(color).k === true) {
+          if (
+            !chess.get("f8") &&
+            !chess.get("g8") &&
+            chess.isAttacked("g8", "w") === false
+          ) {
+            setValidMoves((prev) => [...prev, "g8"]);
+          }
+        }
+        if (chess.getCastlingRights(color).q === true) {
+          if (
+            !chess.get("d8") &&
+            !chess.get("c8") &&
+            !chess.get("b8") &&
+            chess.isAttacked("c8", "w") === false
+          ) {
+            setValidMoves((prev) => [...prev, "c8"]);
+          }
+        }
+      }
+      if (color === "w") {
+        if (chess.getCastlingRights(color).k === true) {
+          if (
+            !chess.get("f1") &&
+            !chess.get("g1") &&
+            chess.isAttacked("g1", "b") === false
+          ) {
+            setValidMoves((prev) => [...prev, "g1"]);
+          }
+        }
+        if (chess.getCastlingRights(color).q === true) {
+          if (
+            !chess.get("d1") &&
+            !chess.get("c1") &&
+            !chess.get("b1") &&
+            chess.isAttacked("c1", "w") === false
+          ) {
+            setValidMoves((prev) => [...prev, "c1"]);
+          }
+        }
+      }
+    }
+  };
   return (
     <div className="relative grid w-5/6 h-5/6 grid-cols-8 grid-rows-8">
       {turn !== myColor && (
@@ -45,9 +92,11 @@ function Board({ board, sendMove, turn, myColor }: boardProps) {
           return (
             <span
               key={index}
-              onClick={() =>
-                moveHandler(boardCell?.square, square, boardCell?.color)
-              }
+              onClick={() => {
+                moveHandler(boardCell?.square, square, boardCell?.color);
+                if (boardCell)
+                  updateCastlingMove(boardCell?.type, boardCell?.color);
+              }}
               className={`w-full h-full flex justify-center items-center relative ${squareColor}`}
             >
               {validMoves.includes(square) && <ValidMoveIndicator />}
