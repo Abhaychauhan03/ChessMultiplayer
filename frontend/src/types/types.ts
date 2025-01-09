@@ -20,3 +20,5 @@ export type boardProps = {
 };
 
 export type castlingDirections = "k" | "q";
+
+export type upgradePiece = "q" | "r" | "n" | "b";
