@@ -18,3 +18,5 @@ export type boardProps = {
   turn: Color;
   myColor: Color;
 };
+
+export type castlingDirections = "k" | "q";

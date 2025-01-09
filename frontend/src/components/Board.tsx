@@ -1,6 +1,6 @@
 import { Color, PieceSymbol, Square } from "chess.js";
 import { useCallback, useState } from "react";
-import { boardProps } from "../types/types";
+import { boardProps, castlingDirections } from "../types/types";
 import { findSquareColor, getValidMoves, indexToSquare } from "../utils/utils";
 import ValidMoveIndicator from "./ValidMoveIndicator";
 import { chess } from "../utils/constants";
@@ -26,7 +26,19 @@ function Board({ board, sendMove, turn, myColor }: boardProps) {
           setFrom("");
           return;
         }
-        sendMove(JSON.stringify({ from, to: clickedSquare }));
+        const color = chess.get(from as Square).color;
+        const type = chess.get(from as Square).type;
+        const isPromotion =
+          type === "p" &&
+          ((color === "w" && clickedSquare.endsWith("8")) ||
+            (color === "b" && clickedSquare.endsWith("1")));
+        sendMove(
+          JSON.stringify({
+            from,
+            to: clickedSquare,
+            ...(isPromotion && { promotion: "q" }),
+          })
+        );
         setFrom("");
         setValidMoves([]);
       }
@@ -34,50 +46,30 @@ function Board({ board, sendMove, turn, myColor }: boardProps) {
     [from, myColor, sendMove, validMoves]
   );
   const updateCastlingMove = (type: PieceSymbol, color: Color) => {
-    if (type === "k") {
-      if (color === "b") {
-        if (chess.getCastlingRights(color).k === true) {
-          if (
-            !chess.get("f8") &&
-            !chess.get("g8") &&
-            chess.isAttacked("g8", "w") === false
-          ) {
-            setValidMoves((prev) => [...prev, "g8"]);
-          }
-        }
-        if (chess.getCastlingRights(color).q === true) {
-          if (
-            !chess.get("d8") &&
-            !chess.get("c8") &&
-            !chess.get("b8") &&
-            chess.isAttacked("c8", "w") === false
-          ) {
-            setValidMoves((prev) => [...prev, "c8"]);
-          }
-        }
+    if (type !== "k") return;
+    const castlingRights = chess.getCastlingRights(color);
+    const directions: castlingDirections[] = ["k", "q"];
+    const opponentColor = color === "w" ? "b" : "w";
+    const checkSquares = {
+      b: { k: ["f8", "g8"], q: ["d8", "b8", "c8"] },
+      w: { k: ["f1", "g1"], q: ["d1", "b1", "c1"] },
+    };
+    directions.forEach((dir: castlingDirections) => {
+      if (castlingRights[dir]) {
+        const toCheckArray = checkSquares[color][dir];
+        const landingSquare = toCheckArray[toCheckArray.length - 1];
+        const squaresCheck = toCheckArray.every(
+          (square) => !chess.get(square as Square)
+        );
+
+        const notAttacked = !chess.isAttacked(
+          landingSquare as Square,
+          opponentColor
+        );
+        if (squaresCheck && notAttacked)
+          setValidMoves((prev) => [...prev, landingSquare]);
       }
-      if (color === "w") {
-        if (chess.getCastlingRights(color).k === true) {
-          if (
-            !chess.get("f1") &&
-            !chess.get("g1") &&
-            chess.isAttacked("g1", "b") === false
-          ) {
-            setValidMoves((prev) => [...prev, "g1"]);
-          }
-        }
-        if (chess.getCastlingRights(color).q === true) {
-          if (
-            !chess.get("d1") &&
-            !chess.get("c1") &&
-            !chess.get("b1") &&
-            chess.isAttacked("c1", "w") === false
-          ) {
-            setValidMoves((prev) => [...prev, "c1"]);
-          }
-        }
-      }
-    }
+    });
   };
   return (
     <div className="relative grid w-5/6 h-5/6 grid-cols-8 grid-rows-8">
