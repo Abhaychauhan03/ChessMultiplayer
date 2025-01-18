@@ -1,6 +1,4 @@
-type GameInfoPanelProps = {
-  startGame: () => void;
-};
+import { GameInfoPanelProps } from "../types/types";
 
 function GameInfoPanel({ startGame }: GameInfoPanelProps) {
   return (

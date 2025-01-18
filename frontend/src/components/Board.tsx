@@ -1,10 +1,10 @@
-import { Color, PieceSymbol, Square } from "chess.js";
+import { Color, Square } from "chess.js";
 import { useCallback, useState } from "react";
-import { boardProps, castlingDirections, upgradePiece } from "../types/types";
-import { findSquareColor, getValidMoves, indexToSquare } from "../utils/utils";
-import ValidMoveIndicator from "./ValidMoveIndicator";
+import { boardCell, boardProps, upgradePiece } from "../types/types";
+import { getValidMoves, updateCastlingMove } from "../utils/utils";
 import { chess } from "../utils/constants";
 import PiecePromotionDialog from "./PiecePromotionDialog";
+import BoardCell from "./BoardCell";
 
 function Board({ board, sendMove, turn, myColor }: boardProps) {
   const [from, setFrom] = useState("");
@@ -63,31 +63,14 @@ function Board({ board, sendMove, turn, myColor }: boardProps) {
     setValidMoves([]);
     setIsPromotion(false);
   };
-  const updateCastlingMove = (type: PieceSymbol, color: Color) => {
-    if (type !== "k") return;
-    const castlingRights = chess.getCastlingRights(color);
-    const directions: castlingDirections[] = ["k", "q"];
-    const opponentColor = color === "w" ? "b" : "w";
-    const checkSquares = {
-      b: { k: ["f8", "g8"], q: ["d8", "b8", "c8"] },
-      w: { k: ["f1", "g1"], q: ["d1", "b1", "c1"] },
-    };
-    directions.forEach((dir: castlingDirections) => {
-      if (castlingRights[dir]) {
-        const toCheckArray = checkSquares[color][dir];
-        const landingSquare = toCheckArray[toCheckArray.length - 1];
-        const squaresCheck = toCheckArray.every(
-          (square) => !chess.get(square as Square)
-        );
 
-        const notAttacked = !chess.isAttacked(
-          landingSquare as Square,
-          opponentColor
-        );
-        if (squaresCheck && notAttacked)
-          setValidMoves((prev) => [...prev, landingSquare]);
-      }
-    });
+  const handleClick = (boardCell: boardCell, square: Square) => {
+    moveHandler(boardCell?.square, square, boardCell?.color);
+    if (boardCell?.type === "k")
+      setValidMoves((prev) => [
+        ...prev,
+        ...updateCastlingMove(boardCell.type, boardCell.color),
+      ]);
   };
   return (
     <div className="grid w-5/6 h-5/6 grid-cols-8 grid-rows-8">
@@ -102,28 +85,15 @@ function Board({ board, sendMove, turn, myColor }: boardProps) {
       )}
       {board.map((boardRow, i) => {
         return boardRow.map((boardCell, j) => {
-          const index = i * 8 + j;
-          const square = indexToSquare(index);
-          const squareColor = findSquareColor(index);
+          const index = myColor === "w" ? i * 8 + j : 63 - (i * 8 + j);
           return (
-            <span
+            <BoardCell
               key={index}
-              onClick={() => {
-                moveHandler(boardCell?.square, square, boardCell?.color);
-                if (boardCell)
-                  updateCastlingMove(boardCell?.type, boardCell?.color);
-              }}
-              className={`w-full h-full flex justify-center items-center relative ${squareColor}`}
-            >
-              {validMoves.includes(square) && <ValidMoveIndicator />}
-              {boardCell && (
-                <img
-                  src={`/pieces/${boardCell?.color + boardCell?.type}.svg`}
-                  className="h-16 z-0"
-                  loading="lazy"
-                />
-              )}
-            </span>
+              index={index}
+              boardCell={boardCell}
+              handleClick={handleClick}
+              validMoves={validMoves}
+            />
           );
         });
       })}

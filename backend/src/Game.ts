@@ -1,53 +1,86 @@
 import { Chess } from "chess.js";
 import { User } from "./User";
 import { v4 as uuidv4 } from "uuid";
+import { gameEvents, gameResult } from "./types";
 export default class Game {
   public readonly id: string;
   private chess: Chess;
+  private p1Time: number;
+  private p2Time: number;
   constructor(public p1: User, public p2: User) {
     this.chess = new Chess();
     this.id = uuidv4();
+    this.p1Time = 600;
+    this.p2Time = 600;
     p1.socket.send(
       JSON.stringify({
-        event: "matched",
+        event: gameEvents.Matched,
         message: this.chess.fen(),
         color: "w",
+        playerName: p1.name,
+        opponentName: p2.name,
       })
     );
     p2.socket.send(
       JSON.stringify({
-        event: "matched",
+        event: gameEvents.Matched,
         message: this.chess.fen(),
         color: "b",
+        playerName: p2.name,
+        opponentName: p1.name,
       })
     );
   }
-  private broadcastCurrentState() {
-    this.p1.socket.send(
-      JSON.stringify({
-        event: "update",
-        message: this.chess.fen(),
-      })
-    );
-    this.p2.socket.send(
-      JSON.stringify({
-        event: "update",
-        message: this.chess.fen(),
-      })
-    );
+  private broadcastMessage(event: string, message: string | object) {
+    this.sendMessage(this.p1, {
+      event,
+      message,
+    });
+    this.sendMessage(this.p2, {
+      event,
+      message,
+    });
   }
-  private async handleMove(player: User) {
+  private sendMessage(player: User, message: string | object) {
+    player.socket.send(JSON.stringify(message));
+  }
+  private timerUpdate(player: User) {
+    if (player === this.p1) this.p1Time--;
+    else this.p2Time--;
+    this.broadcastMessage(gameEvents.TimerUpdate, {
+      whiteTime: this.p1Time,
+      blackTime: this.p2Time,
+    });
+    if (this.p1Time === 0) {
+      this.gameOver(this.p2, this.p1);
+      return false;
+    } else if (this.p2Time === 0) {
+      this.gameOver(this.p1, this.p2);
+      return false;
+    }
+    return true;
+  }
+  private async handleMove(player: User): Promise<boolean> {
     return await new Promise((resolve, reject) => {
+      const interval = setInterval(() => {
+        if (!this.timerUpdate(player)) {
+          clearInterval(interval);
+          resolve(false);
+        }
+      }, 1000);
       player.socket.once("message", (data: string) => {
         try {
           const move = JSON.parse(data);
           this.chess.move(move);
-          this.broadcastCurrentState();
-          resolve("Moved Successfully");
+          this.broadcastMessage(gameEvents.Update, this.chess.fen());
+          clearInterval(interval);
+          resolve(true);
         } catch (e) {
-          player.socket.send(
-            JSON.stringify({ event: "error", message: "illegal-move" })
-          );
+          this.sendMessage(player, {
+            event: gameEvents.Error,
+            message: "illegal-move",
+          });
+          clearInterval(interval);
           reject("illegal-move");
         }
       });
@@ -59,19 +92,20 @@ export default class Game {
     loser.socket.removeAllListeners();
   }
 
-  private gameOver(player1: User, player2: User) {
-    player1.socket.send(
-      JSON.stringify({ event: "result", message: "game-won" })
+  private gameOver(winner: User, loser: User) {
+    winner.socket.send(
+      JSON.stringify({ event: gameEvents.Result, message: gameResult.GameWon })
     );
-    player2.socket.send(
-      JSON.stringify({ event: "result", message: "game-lost" })
+    loser.socket.send(
+      JSON.stringify({
+        event: gameEvents.Result,
+        message: gameResult.GameLost,
+      })
     );
+    this.cleanupSocket(winner, loser);
   }
   private addCloseHandler(player: User, opponent: User) {
-    player.socket.once("close", () => {
-      this.gameOver(opponent, player);
-      this.cleanupSocket(player, opponent);
-    });
+    player.socket.once("close", () => this.gameOver(opponent, player));
   }
 
   async startGame() {
@@ -80,31 +114,17 @@ export default class Game {
     this.addCloseHandler(this.p1, this.p2);
     this.addCloseHandler(this.p2, this.p1);
     while (gameActive) {
-      if (currentMove) {
-        let result;
-        try {
-          await this.handleMove(this.p1);
-          result = true;
-        } catch (error) {
-          result = false;
-        }
-        if (result) currentMove = false;
-      } else {
-        let result;
-        try {
-          await this.handleMove(this.p2);
-          result = true;
-        } catch (error) {
-          result = false;
-        }
-        if (result) currentMove = true;
+      try {
+        gameActive = currentMove
+          ? await this.handleMove(this.p1)
+          : await this.handleMove(this.p2);
+        currentMove = !currentMove;
+      } catch (error) {
+        console.log(error);
       }
       if (this.chess.isGameOver()) {
-        if (!currentMove) {
-          this.gameOver(this.p1, this.p2);
-        } else {
-          this.gameOver(this.p2, this.p1);
-        }
+        if (!currentMove) this.gameOver(this.p1, this.p2);
+        else this.gameOver(this.p2, this.p1);
         gameActive = false;
       }
     }

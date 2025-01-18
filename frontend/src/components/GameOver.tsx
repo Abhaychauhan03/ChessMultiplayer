@@ -1,6 +1,5 @@
 import { useNavigate } from "react-router-dom";
-
-type GameOverProps = { won: boolean };
+import { GameOverProps } from "../types/types";
 
 function GameOver({ won }: GameOverProps) {
   const navigate = useNavigate();
