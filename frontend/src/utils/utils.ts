@@ -30,7 +30,7 @@ export const NumberToTime = (num: number) => {
   return (
     "" +
     Math.floor(num / 60) +
-    ":" +
+    " : " +
     String(Math.floor(num % 60)).padStart(2, "0")
   );
 };

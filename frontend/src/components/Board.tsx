@@ -73,7 +73,7 @@ function Board({ board, sendMove, turn, myColor }: boardProps) {
       ]);
   };
   return (
-    <div className="grid w-5/6 h-5/6 grid-cols-8 grid-rows-8">
+    <div className="grid w-full h-full max-w-screen-md py-8 px-16 grid-cols-8 grid-rows-8">
       {turn !== myColor && (
         <div className="absolute inset-0 bg-gray-800 opacity-80 z-30"></div>
       )}

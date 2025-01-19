@@ -25,8 +25,8 @@ function Game() {
   const [won, setWon] = useState(true);
   const [playerName, setPlayerName] = useState("p1");
   const [opponentName, setOpponentName] = useState("p2");
-  const [playerTime, setPlayerTime] = useState("00:00");
-  const [opponentTime, setOpponentTime] = useState("00:00");
+  const [playerTime, setPlayerTime] = useState("00 : 00");
+  const [opponentTime, setOpponentTime] = useState("00 : 00");
 
   const handleNewFen = (fen: string) => {
     chess.load(fen);
@@ -86,14 +86,16 @@ function Game() {
         />
       )}
       <div className="grid gap-x-12 grid-cols-2 flex-grow">
-        <div className="flex items-center justify-end">
-          <Board
-            board={board}
-            sendMove={sendMove}
-            turn={turn}
-            myColor={myColor}
-          />
-        </div>
+        {board.length > 0 && (
+          <div className="flex items-center justify-center col-span-2">
+            <Board
+              board={board}
+              sendMove={sendMove}
+              turn={turn}
+              myColor={myColor}
+            />
+          </div>
+        )}
         {!board.length && <GameInfoPanel startGame={startGame} />}
         {gameOver && <GameOver won={won} />}
         {loading && <Loader />}
